@@ -1,18 +1,24 @@
-/** 保存基础登记记录。 */
-export class Store {
-  constructor() {
-    this.records = new Map();
+/** 仅追加的事件存储：全部留痕与故障恢复的唯一事实来源。 */
+export class EventStore {
+  constructor(events = []) {
+    this.events = events.map((e) => structuredClone(e));
   }
 
-  add(record) {
-    if (this.records.has(record.recordId)) {
-      throw new Error("记录编号已存在");
-    }
-    this.records.set(record.recordId, structuredClone(record));
+  append(type, payload, at) {
+    const event = { seq: this.events.length + 1, type, at, ...structuredClone(payload) };
+    this.events.push(event);
+    return structuredClone(event);
   }
 
-  get(recordId) {
-    const value = this.records.get(recordId);
-    return value ? structuredClone(value) : null;
+  all() {
+    return this.events.map((e) => structuredClone(e));
+  }
+
+  serialize() {
+    return JSON.stringify(this.events);
+  }
+
+  static restore(raw) {
+    return new EventStore(JSON.parse(raw));
   }
 }
